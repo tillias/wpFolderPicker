@@ -22,8 +22,11 @@ namespace FolderPickerLib
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
+            if (Visibility == Visibility.Visible)
+            {
+                DialogResult = false;
+            }
             Close();
-            DialogResult = false;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Interop;
 
 namespace FolderPickerLib
 {
@@ -22,11 +23,14 @@ namespace FolderPickerLib
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Visibility == Visibility.Visible)
+            if (ComponentDispatcher.IsThreadModal)
             {
                 DialogResult = false;
             }
-            Close();
+            else
+            {
+                Close();
+            }
         }
     }
 }

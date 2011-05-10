@@ -10,6 +10,18 @@ namespace FolderPickerLib
     {
         public string SelectedPath { get; private set; }
 
+        public string InitialPath
+        {
+            get
+            {
+                return FolderPickerControl.InitialPath;
+            }
+            set
+            {
+                FolderPickerControl.InitialPath = value;
+            }
+        }
+
         public FolderPickerDialog()
         {
             InitializeComponent();

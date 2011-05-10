@@ -1,10 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 
@@ -50,6 +55,19 @@ namespace FolderPickerLib
         }
 
         public string SelectedPath { get; private set; }
+
+        public string InitialPath
+        {
+            get
+            {
+                return initialPath;
+            }
+            set
+            {
+                initialPath = value;
+                UpdateInitialPathUI();
+            }
+        }
 
         #endregion
 
@@ -150,12 +168,94 @@ namespace FolderPickerLib
                 throw new Exception();
         }
 
+        private void UpdateInitialPathUI()
+        {
+            Task waitTask = Task.Factory.StartNew((t) =>
+                {
+                    while (TreeView.ItemContainerGenerator.Status != GeneratorStatus.ContainersGenerated)
+                    {
+                        Thread.Sleep(100);
+                    }
+                }, TaskScheduler.Default);
+
+            Task updateUITask = waitTask.ContinueWith((t) =>
+                {
+                    if (!String.IsNullOrEmpty(InitialPath))
+                    {
+                        var initialDir = new DirectoryInfo(InitialPath);
+                        if (initialDir.Exists)
+                        {
+                            var queue = TraverseUpToRoot(initialDir);
+                            var currentTreeItem = Root;
+                            var containerGenerator = TreeView.ItemContainerGenerator;
+                            while (queue.Count > 0)
+                            {
+                                var top = queue.Pop();
+                                var matchingTreeItem = currentTreeItem.Childs.Where(c => c.Name == top.Name).FirstOrDefault();
+                                if (matchingTreeItem != null)
+                                {
+                                    if (containerGenerator != null)
+                                    {
+                                        var container = containerGenerator.ContainerFromItem(matchingTreeItem) as TreeViewItem;
+                                        if (container != null)
+                                        {
+                                            container.IsExpanded = true;
+
+                                            currentTreeItem = matchingTreeItem;
+                                            containerGenerator = container.ItemContainerGenerator;
+
+                                            Task waitGeneratorTask = Task.Factory.StartNew((t1) =>
+                                            {
+                                                while (containerGenerator.Status != GeneratorStatus.ContainersGenerated)
+                                                    Thread.Sleep(50);
+                                            }, TaskScheduler.Default);
+
+                                            waitGeneratorTask.Wait();
+
+                                            //Task finishWaitTask = waitGeneratorTask.ContinueWith((t2) =>
+                                            //{
+                                            //}, TaskScheduler.FromCurrentSynchronizationContext());
+
+                                            //while (containerGenerator.Status != GeneratorStatus.ContainersGenerated)
+                                                //Thread.Sleep(50);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+        }
+
+        private Stack<DirectoryInfo> TraverseUpToRoot(DirectoryInfo child)
+        {
+            if (child == null)
+                return null;
+
+            if (!child.Exists)
+                return null;
+
+            Stack<DirectoryInfo> queue = new Stack<DirectoryInfo>();
+            queue.Push(child);
+            DirectoryInfo ti = child.Parent;
+
+            while (ti != null)
+            {
+                queue.Push(ti);
+                ti = ti.Parent;
+            }
+
+
+            return queue;
+        }
+
         #endregion
 
         #region Private fields
 
         private TreeItem root;
         private TreeItem selectedItem;
+        private string initialPath;
 
         #endregion
 

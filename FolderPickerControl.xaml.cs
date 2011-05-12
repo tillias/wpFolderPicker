@@ -170,61 +170,65 @@ namespace FolderPickerLib
 
         private void UpdateInitialPathUI()
         {
-            Task waitTask = Task.Factory.StartNew((t) =>
-                {
-                    while (TreeView.ItemContainerGenerator.Status != GeneratorStatus.ContainersGenerated)
-                    {
-                        Thread.Sleep(100);
-                    }
-                }, TaskScheduler.Default);
+            if (!Directory.Exists(InitialPath))
+                return;
 
-            Task updateUITask = waitTask.ContinueWith((t) =>
+             var initialDir = new DirectoryInfo(InitialPath);
+
+            if (!initialDir.Exists)
+                return;
+
+            var stack = TraverseUpToRoot(initialDir);
+            var containerGenerator = TreeView.ItemContainerGenerator;
+            var uiContext = TaskScheduler.FromCurrentSynchronizationContext();
+            DirectoryInfo currentDir = null;
+            var dirContainer = Root;
+            bool waitingGenerator = false;
+
+            Task processStackTask = Task.Factory.StartNew(() =>
                 {
-                    if (!String.IsNullOrEmpty(InitialPath))
+                    while (stack.Count > 0)
                     {
-                        var initialDir = new DirectoryInfo(InitialPath);
-                        if (initialDir.Exists)
+                        if (!waitingGenerator)
                         {
-                            var queue = TraverseUpToRoot(initialDir);
-                            var currentTreeItem = Root;
-                            var containerGenerator = TreeView.ItemContainerGenerator;
-                            while (queue.Count > 0)
+                            currentDir = stack.Pop();
+                            waitingGenerator = true;
+
+                            Task waitGeneratorTask = Task.Factory.StartNew(() =>
                             {
-                                var top = queue.Pop();
-                                var matchingTreeItem = currentTreeItem.Childs.Where(c => c.Name == top.Name).FirstOrDefault();
-                                if (matchingTreeItem != null)
+                                if (containerGenerator == null)
+                                    return;
+
+                                while (containerGenerator.Status != GeneratorStatus.ContainersGenerated)
                                 {
-                                    if (containerGenerator != null)
-                                    {
-                                        var container = containerGenerator.ContainerFromItem(matchingTreeItem) as TreeViewItem;
-                                        if (container != null)
-                                        {
-                                            container.IsExpanded = true;
-
-                                            currentTreeItem = matchingTreeItem;
-                                            containerGenerator = container.ItemContainerGenerator;
-
-                                            Task waitGeneratorTask = Task.Factory.StartNew((t1) =>
-                                            {
-                                                while (containerGenerator.Status != GeneratorStatus.ContainersGenerated)
-                                                    Thread.Sleep(50);
-                                            }, TaskScheduler.Default);
-
-                                            waitGeneratorTask.Wait();
-
-                                            //Task finishWaitTask = waitGeneratorTask.ContinueWith((t2) =>
-                                            //{
-                                            //}, TaskScheduler.FromCurrentSynchronizationContext());
-
-                                            //while (containerGenerator.Status != GeneratorStatus.ContainersGenerated)
-                                                //Thread.Sleep(50);
-                                        }
-                                    }
+                                    Thread.Sleep(50);
                                 }
-                            }
+
+                            }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
+
+                            Task updateUiTask = waitGeneratorTask.ContinueWith((r) =>
+                            {
+                                try
+                                {
+                                    var childItem = dirContainer.Childs.Where(c => c.Name == currentDir.Name).FirstOrDefault();
+                                    var tvi = containerGenerator.ContainerFromItem(childItem) as TreeViewItem;
+                                    dirContainer = tvi.DataContext as TreeItem;
+                                    tvi.IsExpanded = true;
+
+                                    tvi.Focus();
+
+                                    containerGenerator = tvi.ItemContainerGenerator;
+                                }
+                                catch { }
+
+                                waitingGenerator = false;
+                            }, uiContext);
                         }
+
+                        Thread.Sleep(50);
                     }
-                }, TaskScheduler.FromCurrentSynchronizationContext());
+
+                }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
         }
 
         private Stack<DirectoryInfo> TraverseUpToRoot(DirectoryInfo child)

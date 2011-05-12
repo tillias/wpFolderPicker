@@ -173,7 +173,7 @@ namespace FolderPickerLib
             if (!Directory.Exists(InitialPath))
                 return;
 
-             var initialDir = new DirectoryInfo(InitialPath);
+            var initialDir = new DirectoryInfo(InitialPath);
 
             if (!initialDir.Exists)
                 return;
@@ -183,49 +183,43 @@ namespace FolderPickerLib
             var uiContext = TaskScheduler.FromCurrentSynchronizationContext();
             DirectoryInfo currentDir = null;
             var dirContainer = Root;
-            bool waitingGenerator = false;
+
+            AutoResetEvent waitEvent = new AutoResetEvent(true);
 
             Task processStackTask = Task.Factory.StartNew(() =>
                 {
                     while (stack.Count > 0)
                     {
-                        if (!waitingGenerator)
+                        waitEvent.WaitOne();
+
+                        currentDir = stack.Pop();
+
+                        Task waitGeneratorTask = Task.Factory.StartNew(() =>
                         {
-                            currentDir = stack.Pop();
-                            waitingGenerator = true;
+                            if (containerGenerator == null)
+                                return;
 
-                            Task waitGeneratorTask = Task.Factory.StartNew(() =>
+                            while (containerGenerator.Status != GeneratorStatus.ContainersGenerated)
+                                Thread.Sleep(50);
+                        }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
+
+                        Task updateUiTask = waitGeneratorTask.ContinueWith((r) =>
+                        {
+                            try
                             {
-                                if (containerGenerator == null)
-                                    return;
+                                var childItem = dirContainer.Childs.Where(c => c.Name == currentDir.Name).FirstOrDefault();
+                                var tvi = containerGenerator.ContainerFromItem(childItem) as TreeViewItem;
+                                dirContainer = tvi.DataContext as TreeItem;
+                                tvi.IsExpanded = true;
 
-                                while (containerGenerator.Status != GeneratorStatus.ContainersGenerated)
-                                {
-                                    Thread.Sleep(50);
-                                }
+                                tvi.Focus();
 
-                            }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
+                                containerGenerator = tvi.ItemContainerGenerator;
+                            }
+                            catch { }
 
-                            Task updateUiTask = waitGeneratorTask.ContinueWith((r) =>
-                            {
-                                try
-                                {
-                                    var childItem = dirContainer.Childs.Where(c => c.Name == currentDir.Name).FirstOrDefault();
-                                    var tvi = containerGenerator.ContainerFromItem(childItem) as TreeViewItem;
-                                    dirContainer = tvi.DataContext as TreeItem;
-                                    tvi.IsExpanded = true;
-
-                                    tvi.Focus();
-
-                                    containerGenerator = tvi.ItemContainerGenerator;
-                                }
-                                catch { }
-
-                                waitingGenerator = false;
-                            }, uiContext);
-                        }
-
-                        Thread.Sleep(50);
+                            waitEvent.Set();
+                        }, uiContext);
                     }
 
                 }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);

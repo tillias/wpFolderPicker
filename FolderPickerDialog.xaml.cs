@@ -8,6 +8,34 @@ namespace FolderPickerLib
     /// </summary>
     public partial class FolderPickerDialog : Window
     {
+        #region Dependency properties
+
+        public static readonly DependencyProperty ItemContainerStyleProperty = 
+            DependencyProperty.Register("ItemContainerStyle", typeof(Style), typeof(FolderPickerDialog));
+
+        public Style ItemContainerStyle
+        {
+            get
+            {
+                return (Style)GetValue(ItemContainerStyleProperty);
+            }
+            set
+            {
+                SetValue(ItemContainerStyleProperty, value);
+            }
+        }
+
+        private static void OnItemContainerStyleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var control = d as FolderPickerDialog;
+            if (control != null)
+            {
+                control.ItemContainerStyle = e.NewValue as Style;
+            }
+        }
+
+        #endregion
+
         public string SelectedPath { get; private set; }
 
         public string InitialPath

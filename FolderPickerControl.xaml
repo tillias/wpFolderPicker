@@ -9,6 +9,10 @@
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
         <local:DriveIconConverter x:Key="DriveIconConverter"/>
+        
+        <Style x:Key="TreeItemStyle" TargetType="{x:Type TreeViewItem}">
+            
+        </Style>
     </UserControl.Resources>
     <Grid x:Name="LayoutRoot">
         <Grid.RowDefinitions>
@@ -17,6 +21,7 @@
         </Grid.RowDefinitions>
         <TreeView x:Name="TreeView" 
                   ItemsSource="{Binding ElementName=pickerControl,Path=Root.Childs}"
+                  ItemContainerStyle="{Binding ElementName=pickerControl,Path=ItemContainerStyle}"
                   TreeViewItem.Expanded="TreeView_Expanded" TreeViewItem.Selected="TreeView_Selected">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource ="{Binding Childs}">

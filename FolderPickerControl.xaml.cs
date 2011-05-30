@@ -69,6 +69,19 @@ namespace FolderPickerLib
             }
         }
 
+        public Style ItemContainerStyle
+        {
+            get
+            {
+                return itemContainerStyle;
+            }
+            set
+            {
+                itemContainerStyle = value;
+                OnPropertyChanged("ItemContainerStyle");
+            }
+        }
+
         #endregion
 
         public FolderPickerControl()
@@ -254,10 +267,9 @@ namespace FolderPickerLib
         private TreeItem root;
         private TreeItem selectedItem;
         private string initialPath;
+        private Style itemContainerStyle;
 
         #endregion
-
-
     }
 
     public class DriveIconConverter : IValueConverter

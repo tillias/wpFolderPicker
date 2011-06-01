@@ -10,8 +10,9 @@
     <UserControl.Resources>
         <local:DriveIconConverter x:Key="DriveIconConverter"/>
         <ContextMenu x:Key="TreeItemContextMenu">
+            <MenuItem Header="Create" Click="CreateMenuItem_Click"/>
             <MenuItem Header="Rename" Click="RenameMenuItem_Click"/>
-            <MenuItem Header="Delete"/>
+            <MenuItem Header="Delete" Click="DeleteMenuItem_Click"/>
         </ContextMenu>
     </UserControl.Resources>
     <Grid x:Name="LayoutRoot">

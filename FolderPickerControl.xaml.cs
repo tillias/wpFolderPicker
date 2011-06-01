@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
@@ -95,22 +96,7 @@ namespace FolderPickerLib
 
         public void CreateNewFolder()
         {
-            try
-            {
-                if (SelectedItem == null)
-                    return;
-
-                var parentPath = SelectedItem.GetFullPath();
-                var newDirName = CreateNewFolderName(parentPath);
-                var newPath = Path.Combine(parentPath, newDirName);
-
-                Directory.CreateDirectory(newPath);
-                SelectedItem.Childs.Add(new TreeItem(newDirName, SelectedItem));
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(String.Format("Can't create new folder. Error: {0}", ex.Message));
-            }
+            CreateNewFolderImpl(SelectedItem);
         }
 
         #region INotifyPropertyChanged Members
@@ -281,7 +267,31 @@ namespace FolderPickerLib
             return queue;
         }
 
-        private string CreateNewFolderName(string parentPath)
+        private void CreateNewFolderImpl(TreeItem parent)
+        {
+            try
+            {
+                if (parent == null)
+                    return;
+
+                var parentPath = parent.GetFullPath();
+                var newDirName = GenerateNewFolderName(parentPath);
+                var newPath = Path.Combine(parentPath, newDirName);
+
+                Directory.CreateDirectory(newPath);
+
+                var childs = parent.Childs;
+                var newChild = new TreeItem(newDirName, parent);
+                childs.Add(newChild);
+                parent.Childs = childs.OrderBy(c => c.Name).ToObservableCollection();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(String.Format("Can't create new folder. Error: {0}", ex.Message));
+            }
+        }
+
+        private string GenerateNewFolderName(string parentPath)
         {
             string result = NewFolderName;
 
@@ -300,6 +310,16 @@ namespace FolderPickerLib
             }
 
             return result;
+        }
+
+        private void CreateMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var item = sender as MenuItem;
+            if (item != null)
+            {
+                var context = item.DataContext as TreeItem;
+                CreateNewFolderImpl(context);
+            }
         }
 
         private void RenameMenuItem_Click(object sender, RoutedEventArgs e)
@@ -347,6 +367,37 @@ namespace FolderPickerLib
             }
         }
 
+        private void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var item = sender as MenuItem;
+                if (item != null)
+                {
+                    var context = item.DataContext as TreeItem;
+                    if (context != null && !(context is DriveTreeItem))
+                    {
+                        var confirmed =
+                            MessageBox.Show(
+                                String.Format("Do you really want to delete folder {0}?", context.Name),
+                                "Confirm folder removal",
+                                MessageBoxButton.YesNo);
+
+                        if (confirmed == MessageBoxResult.Yes)
+                        {
+                            Directory.Delete(context.GetFullPath());
+                            var parent = context.Parent;
+                            parent.Childs.Remove(context);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(String.Format("Can't delete folder. Error: {0}", ex.Message));
+            }
+        }
+
         #endregion
 
         #region Private fields
@@ -357,6 +408,8 @@ namespace FolderPickerLib
         private Style itemContainerStyle;
 
         #endregion
+
+
     }
 
     public class DriveIconConverter : IValueConverter
@@ -463,5 +516,18 @@ namespace FolderPickerLib
         #endregion
     }
 
+    public static class LinqExtensions
+    {
+        public static ObservableCollection<T> ToObservableCollection<T>(this IEnumerable<T> source)
+        {
+            var result = new ObservableCollection<T>();
 
+            foreach (var ci in source)
+            {
+                result.Add(ci);
+            }
+
+            return result;
+        }
+    }
 }

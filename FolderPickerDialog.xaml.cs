@@ -10,7 +10,7 @@ namespace FolderPickerLib
     {
         #region Dependency properties
 
-        public static readonly DependencyProperty ItemContainerStyleProperty = 
+        public static readonly DependencyProperty ItemContainerStyleProperty =
             DependencyProperty.Register("ItemContainerStyle", typeof(Style), typeof(FolderPickerDialog));
 
         public Style ItemContainerStyle
@@ -71,6 +71,11 @@ namespace FolderPickerLib
             {
                 Close();
             }
+        }
+
+        private void CreateButton_Click(object sender, RoutedEventArgs e)
+        {
+            FolderPickerControl.CreateNewFolder();
         }
     }
 }

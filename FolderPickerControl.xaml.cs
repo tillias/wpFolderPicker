@@ -91,6 +91,19 @@ namespace FolderPickerLib
             Init();
         }
 
+        public void CreateNewFolder()
+        {
+            if (SelectedItem == null)
+                return;
+
+            string newDirName = "New Directory";
+
+            var parentPath = SelectedItem.GetFullPath();
+            var newPath = Path.Combine(parentPath, newDirName);
+            SelectedItem.Childs.Add(new TreeItem(newDirName, SelectedItem));
+
+        }
+
         #region INotifyPropertyChanged Members
 
         public void NotifyPropertyChanged<TProperty>(Expression<Func<TProperty>> property)
@@ -256,9 +269,32 @@ namespace FolderPickerLib
                 ti = ti.Parent;
             }
 
-
             return queue;
         }
+
+        //private TreeViewItem FindContaier(TreeItem item)
+        //{
+        //    //create parents queue up to root node
+        //    var curItem = item;
+        //    var stack = new Stack<TreeItem>();
+        //    while (curItem.Parent != null)
+        //    {
+        //        stack.Push(curItem);
+        //        curItem = curItem.Parent;
+        //    }
+
+        //    var containerGenerator = TreeView.ItemContainerGenerator;
+        //    while (stack.Count > 0)
+        //    {
+        //        var last = stack.Pop();
+        //    }
+
+        //    //containers must be generated before this code executes
+        //    var containerGenerator = TreeView.ItemContainerGenerator;
+
+
+        //    return null;
+        //}
 
         #endregion
 
@@ -355,5 +391,26 @@ namespace FolderPickerLib
 
         #endregion
     }
+
+    public class NullToBoolConverter : IValueConverter
+    {
+        #region IValueConverter Members
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null)
+                return false;
+
+            return true;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+    }
+
 
 }

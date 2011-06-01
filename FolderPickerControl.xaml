@@ -9,9 +9,7 @@
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
         <local:DriveIconConverter x:Key="DriveIconConverter"/>
-        
         <Style x:Key="TreeItemStyle" TargetType="{x:Type TreeViewItem}">
-            
         </Style>
     </UserControl.Resources>
     <Grid x:Name="LayoutRoot">

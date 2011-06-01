@@ -3,15 +3,26 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:FolderPickerLib"
         Title="Select folder" Height="500" Width="500" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <Style x:Key="DialogButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Width" Value="75"/>
+            <Setter Property="Margin" Value="8"/>
+        </Style>
+        <local:NullToBoolConverter x:Key="NullToBoolConverter"/>
+    </Window.Resources>
     <Grid x:Name="LayoutRoot">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <local:FolderPickerControl x:Name="FolderPickerControl" Grid.Row="0" Margin="8"/>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="1">
-            <Button x:Name="OkButton" Content="Ok" Width="75" Margin="8" IsDefault="True" Click="OkButton_Click" />
-            <Button x:Name="CancelButton" Content="Cancel" Width="75" Margin="8" IsCancel="True" Click="CancelButton_Click" />
-        </StackPanel>
+        <DockPanel Grid.Row="1">
+            <Button x:Name="CreateButton" Content="New folder" Style="{StaticResource DialogButtonStyle}" Click="CreateButton_Click"
+                    IsEnabled="{Binding ElementName=FolderPickerControl,Path=SelectedItem,Converter={StaticResource NullToBoolConverter}}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
+                <Button x:Name="OkButton" Content="Ok" Style="{StaticResource DialogButtonStyle}" IsDefault="True" Click="OkButton_Click" />
+                <Button x:Name="CancelButton" Content="Cancel" Style="{StaticResource DialogButtonStyle}" IsCancel="True" Click="CancelButton_Click" />
+            </StackPanel>
+        </DockPanel>
     </Grid>
 </Window>

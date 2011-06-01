@@ -88,9 +88,7 @@ namespace FolderPickerLib
         #region Private fields
 
         private string name;
-
         private TreeItem parent;
-
         private ObservableCollection<TreeItem> childs;
 
         #endregion

@@ -22,7 +22,9 @@ namespace FolderPickerLib
     {
         #region Constants
 
-        private static readonly string EmptyItemName = "Empty";
+        private const string EmptyItemName = "Empty";
+        private const string NewFolderName = "New Folder";
+        private const int MaxNewFolderSuffix = 10000;
 
         #endregion
 
@@ -93,15 +95,22 @@ namespace FolderPickerLib
 
         public void CreateNewFolder()
         {
-            if (SelectedItem == null)
-                return;
+            try
+            {
+                if (SelectedItem == null)
+                    return;
 
-            string newDirName = "New Directory";
+                var parentPath = SelectedItem.GetFullPath();
+                var newDirName = CreateNewFolderName(parentPath);
+                var newPath = Path.Combine(parentPath, newDirName);
 
-            var parentPath = SelectedItem.GetFullPath();
-            var newPath = Path.Combine(parentPath, newDirName);
-            SelectedItem.Childs.Add(new TreeItem(newDirName, SelectedItem));
-
+                Directory.CreateDirectory(newPath);
+                SelectedItem.Childs.Add(new TreeItem(newDirName, SelectedItem));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(String.Format("Can't create new folder. Error: {0}", ex.Message));
+            }
         }
 
         #region INotifyPropertyChanged Members
@@ -272,29 +281,71 @@ namespace FolderPickerLib
             return queue;
         }
 
-        //private TreeViewItem FindContaier(TreeItem item)
-        //{
-        //    //create parents queue up to root node
-        //    var curItem = item;
-        //    var stack = new Stack<TreeItem>();
-        //    while (curItem.Parent != null)
-        //    {
-        //        stack.Push(curItem);
-        //        curItem = curItem.Parent;
-        //    }
+        private string CreateNewFolderName(string parentPath)
+        {
+            string result = NewFolderName;
 
-        //    var containerGenerator = TreeView.ItemContainerGenerator;
-        //    while (stack.Count > 0)
-        //    {
-        //        var last = stack.Pop();
-        //    }
+            if (Directory.Exists(Path.Combine(parentPath, result)))
+            {
+                for (int i = 1; i < MaxNewFolderSuffix; ++i)
+                {
+                    var nameWithIndex = String.Format( NewFolderName + " {0}", i);
 
-        //    //containers must be generated before this code executes
-        //    var containerGenerator = TreeView.ItemContainerGenerator;
+                    if (!Directory.Exists(Path.Combine(parentPath, nameWithIndex)))
+                    {
+                        result = nameWithIndex;
+                        break;
+                    }
+                }
+            }
 
+            return result;
+        }
 
-        //    return null;
-        //}
+        private void RenameMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var item = sender as MenuItem;
+                if (item != null)
+                {
+                    var context = item.DataContext as TreeItem;
+                    if (context != null && !(context is DriveTreeItem))
+                    {
+                        var dialog = new InputDialog()
+                        {
+                            Message = "New folder name:",
+                            InputText = context.Name,
+                            Title = String.Format("Do you really want to rename folder {0}?", context.Name)
+                        };
+
+                        if (dialog.ShowDialog() == true)
+                        {
+                            var newFolderName = dialog.InputText;
+
+                            /*
+                             * Parent for context is always not null due to the fact
+                             * that we don't allow to change the name of DriveTreeItem
+                             */
+                            var newFolderFullPath = Path.Combine(context.Parent.GetFullPath(), newFolderName);
+                            if (Directory.Exists(newFolderFullPath))
+                            {
+                                MessageBox.Show(String.Format("Directory already exists: {0}", newFolderFullPath));
+                            }
+                            else
+                            {
+                                Directory.Move(context.GetFullPath(), newFolderFullPath);
+                                context.Name = newFolderName;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(String.Format("Can't rename folder. Error: {0}", ex.Message));
+            }
+        }
 
         #endregion
 

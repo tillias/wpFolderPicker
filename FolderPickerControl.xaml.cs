@@ -99,6 +99,12 @@ namespace FolderPickerLib
             CreateNewFolderImpl(SelectedItem);
         }
 
+        public void RefreshTree()
+        {
+            Root = null;
+            Init();
+        }
+
         #region INotifyPropertyChanged Members
 
         public void NotifyPropertyChanged<TProperty>(Expression<Func<TProperty>> property)
@@ -408,8 +414,6 @@ namespace FolderPickerLib
         private Style itemContainerStyle;
 
         #endregion
-
-
     }
 
     public class DriveIconConverter : IValueConverter

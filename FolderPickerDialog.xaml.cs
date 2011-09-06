@@ -77,5 +77,10 @@ namespace FolderPickerLib
         {
             FolderPickerControl.CreateNewFolder();
         }
+
+        private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        {
+            FolderPickerControl.RefreshTree();
+        }
     }
 }

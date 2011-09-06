@@ -19,6 +19,8 @@
         <DockPanel Grid.Row="1">
             <Button x:Name="CreateButton" Content="New folder" Style="{StaticResource DialogButtonStyle}" Click="CreateButton_Click"
                     IsEnabled="{Binding ElementName=FolderPickerControl,Path=SelectedItem,Converter={StaticResource NullToBoolConverter}}"/>
+            <Button x:Name="RefreshButton" Content="Refresh" Style="{StaticResource DialogButtonStyle}" Click="RefreshButton_Click"
+                    ToolTip="Refreshes folders tree (including drives)"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
                 <Button x:Name="OkButton" Content="Ok" Style="{StaticResource DialogButtonStyle}" IsDefault="True" Click="OkButton_Click" />
                 <Button x:Name="CancelButton" Content="Cancel" Style="{StaticResource DialogButtonStyle}" IsCancel="True" Click="CancelButton_Click" />
